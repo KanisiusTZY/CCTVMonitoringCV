@@ -1,0 +1,63 @@
+{
+  "source": "s.mp4",
+  "confidence": 0.03,
+  "upper_body_ratio": 0.5,
+  "iou_threshold": 0.15,
+  "persistence_frames": 15,
+  "chair_zones": [
+    {
+      "id": "chair_1",
+      "bbox": [
+        749,
+        484,
+        888,
+        634
+      ]
+    },
+    {
+      "id": "chair_2",
+      "bbox": [
+        1148,
+        562,
+        1300,
+        739
+      ]
+    },
+    {
+      "id": "chair_3",
+      "bbox": [
+        1455,
+        385,
+        1565,
+        515
+      ]
+    },
+    {
+      "id": "chair_4",
+      "bbox": [
+        1290,
+        330,
+        1420,
+        540
+      ]
+    },
+    {
+      "id": "chair_5",
+      "bbox": [
+        1315,
+        300,
+        1410,
+        400
+      ]
+    },
+    {
+      "id": "chair_6",
+      "bbox": [
+        985,
+        325,
+        1095,
+        430
+      ]
+    }
+  ]
+}
