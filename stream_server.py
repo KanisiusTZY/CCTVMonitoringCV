@@ -21,7 +21,16 @@ def set_latest_frame(frame):
     global latest_frame_bytes
     if frame is None:
         return
-    ret, jpeg = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+    # Fast resize stream payload for zero-lag remote tunneling
+    h, w = frame.shape[:2]
+    if w > 720:
+        new_w = 720
+        new_h = int(h * (720 / w))
+        stream_frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+    else:
+        stream_frame = frame
+
+    ret, jpeg = cv2.imencode('.jpg', stream_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 65])
     if ret:
         with lock:
             latest_frame_bytes = jpeg.tobytes()
@@ -38,7 +47,7 @@ def generate_stream():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
         
-        time.sleep(0.04)  # ~25 FPS
+        time.sleep(0.015)  # Fast push
 
 @app.after_request
 def add_cors_headers(response):

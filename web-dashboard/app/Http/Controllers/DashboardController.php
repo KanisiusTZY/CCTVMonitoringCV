@@ -92,6 +92,10 @@ class DashboardController extends Controller
 
     public function streamProxy(Request $request)
     {
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
         $config = [];
         if (file_exists($this->getConfigPath())) {
             $config = json_decode(file_get_contents($this->getConfigPath()), true);
@@ -108,11 +112,9 @@ class DashboardController extends Controller
             curl_setopt($ch, CURLOPT_URL, $streamUrl);
             curl_setopt($ch, CURLOPT_HEADER, false);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+            curl_setopt($ch, CURLOPT_BUFFERSIZE, 1024);
             curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($curl, $data) {
                 echo $data;
-                if (ob_get_level() > 0) {
-                    ob_flush();
-                }
                 flush();
                 return strlen($data);
             });
@@ -128,8 +130,10 @@ class DashboardController extends Controller
             curl_close($ch);
         }, 200, [
             'Content-Type' => 'multipart/x-mixed-replace; boundary=frame',
-            'Cache-Control' => 'no-cache, private',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
             'Pragma' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+            'Content-Encoding' => 'none',
         ]);
     }
 }
