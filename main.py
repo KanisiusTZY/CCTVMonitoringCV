@@ -103,8 +103,16 @@ def main():
         while True:
             ret, frame = cap.read()
             if not ret or frame is None:
-                print(f"[INFO] Akhir aliran video setelah {frame_count} frame.")
-                break
+                is_live = str(source).isdigit()
+                if not is_live:
+                    print(f"[INFO] Video selesai ({frame_count} frame). Memutar ulang dari awal (Infinite Loop)...")
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    ret, frame = cap.read()
+                    if not ret or frame is None:
+                        break
+                else:
+                    print(f"[INFO] Aliran video terputus.")
+                    break
 
             frame_count += 1
             curr_time = time.time()
