@@ -23,7 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description="SKYNET Sistem Monitoring Kehadiran Personel")
     parser.add_argument("--source", type=str, default=None, help="Sumber video (path file atau index kamera/RTSP)")
     parser.add_argument("--output", type=str, default=None, help="Path opsional untuk menyimpan video hasil")
-    parser.add_argument("--no-display", action="store_true", help="Jalankan dalam mode headless tanpa tampilan GUI")
+    parser.add_argument("--gui", action="store_true", help="Tampilkan jendela GUI OpenCV desktop (Default: Stream ke Web saja)")
     args = parser.parse_args()
 
     config = load_config()
@@ -85,7 +85,7 @@ def main():
         print(f"[INFO] Menyimpan video hasil ke: {args.output}")
 
     window_name = "SKYNET Monitoring Kehadiran Real-Time"
-    if not args.no_display:
+    if args.gui:
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
     print("\n" + "="*50)
@@ -136,8 +136,8 @@ def main():
             if frame_count % 50 == 0 or frame_count == total_frames:
                 print(f"[INFO] Memproses frame {frame_count}/{total_frames}...")
 
-            # Tampilkan jendela GUI jika bukan mode no-display
-            if not args.no_display:
+            # Tampilkan jendela GUI jika mode --gui diaktifkan
+            if args.gui:
                 cv2.imshow(window_name, annotated_frame)
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q') or key == 27:
@@ -146,6 +146,8 @@ def main():
                 elif key == ord('r'):
                     rule_engine.reset()
                     print("[INFO] Semua timer dan counter kehadiran telah di-reset.")
+            else:
+                time.sleep(0.01)
 
     except KeyboardInterrupt:
         print("[INFO] Dihentikan oleh pengguna.")
@@ -154,7 +156,7 @@ def main():
         if writer:
             writer.release()
             print(f"[INFO] Video hasil berhasil disimpan ke {args.output}")
-        if not args.no_display:
+        if args.gui:
             cv2.destroyAllWindows()
         print("[INFO] Aplikasi selesai.")
 

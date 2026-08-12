@@ -8,6 +8,15 @@ app = Flask(__name__)
 latest_frame_bytes = None
 lock = threading.Lock()
 
+import numpy as np
+
+def get_placeholder_frame():
+    img = np.zeros((480, 854, 3), dtype=np.uint8)
+    cv2.putText(img, "YOLOv8 AI Stream Initializing...", (180, 240),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (56, 189, 248), 2)
+    ret, jpeg = cv2.imencode('.jpg', img)
+    return jpeg.tobytes() if ret else b''
+
 def set_latest_frame(frame):
     global latest_frame_bytes
     if frame is None:
@@ -23,9 +32,11 @@ def generate_stream():
         with lock:
             frame = latest_frame_bytes
         
-        if frame is not None:
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        if frame is None:
+            frame = get_placeholder_frame()
+        
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
         
         time.sleep(0.04)  # ~25 FPS
 
