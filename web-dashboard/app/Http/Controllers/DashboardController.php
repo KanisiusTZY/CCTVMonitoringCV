@@ -175,4 +175,46 @@ class DashboardController extends Controller
             'X-Accel-Buffering' => 'no',
         ]);
     }
+
+    public function sseProxy(Request $request)
+    {
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $config = [];
+        if (file_exists($this->getConfigPath())) {
+            $config = json_decode(file_get_contents($this->getConfigPath()), true);
+        }
+
+        $streamUrl = !empty($config['stream_url']) ? trim($config['stream_url']) : 'http://127.0.0.1:5000/video_feed';
+        $baseUrl = preg_replace('/\/video_feed|\/status|\/current_frame\.jpg$/', '', $streamUrl);
+        $sseUrl = rtrim($baseUrl, '/') . '/sse_feed';
+
+        return response()->stream(function() use ($sseUrl) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $sseUrl);
+            curl_setopt($ch, CURLOPT_HEADER, false);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($curl, $data) {
+                echo $data;
+                flush();
+                return strlen($data);
+            });
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "ngrok-skip-browser-warning: 69420",
+                "bypass-tunnel-reminder: true",
+                "User-Agent: Mozilla/5.0"
+            ]);
+            curl_exec($ch);
+            curl_close($ch);
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+        ]);
+    }
 }

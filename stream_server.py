@@ -70,6 +70,30 @@ def video_feed():
     resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 
+import base64
+
+@app.route('/sse_feed')
+def sse_feed():
+    def event_stream():
+        global latest_frame_bytes, frame_id
+        last_id = -1
+        while True:
+            with frame_condition:
+                while frame_id == last_id and latest_frame_bytes is not None:
+                    frame_condition.wait(timeout=1.0)
+                frame = latest_frame_bytes
+                last_id = frame_id
+
+            if frame:
+                b64_str = base64.b64encode(frame).decode('utf-8')
+                yield f"data: data:image/jpeg;base64,{b64_str}\n\n"
+
+    resp = Response(event_stream(), mimetype="text/event-stream")
+    resp.headers['Cache-Control'] = 'no-cache'
+    resp.headers['X-Accel-Buffering'] = 'no'
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
 @app.route('/current_frame.jpg')
 @app.route('/snapshot')
 def current_frame():

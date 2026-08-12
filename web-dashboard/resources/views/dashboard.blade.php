@@ -650,7 +650,7 @@
         // Auto Refresh Logs every 5 seconds
         setInterval(refreshLogs, 5000);
 
-        let isFetchingFrame = false;
+        let sseStream = null;
 
         function rtrim(str, ch) {
             let res = str;
@@ -660,9 +660,10 @@
             return res;
         }
 
-        function fetchNextStreamFrame() {
-            if (isFetchingFrame) return;
-            isFetchingFrame = true;
+        function initSSEStream() {
+            if (sseStream) {
+                sseStream.close();
+            }
 
             const customUrl = document.getElementById('cfg-stream-url').value.trim();
             const targetImg = document.getElementById('mjpegFeed');
@@ -670,42 +671,54 @@
             const statusTxt = document.getElementById('streamStatusText');
             const liveBadge = document.getElementById('streamLiveBadge');
 
-            let frameUrl = '/current-frame-proxy?t=' + Date.now();
-
+            let sseUrl = '/sse-proxy';
             if (customUrl) {
                 const baseUrl = customUrl.replace(/\/video_feed|\/status|\/current_frame\.jpg$/g, '');
-                frameUrl = rtrim(baseUrl, '/') + '/current_frame.jpg?t=' + Date.now();
+                sseUrl = rtrim(baseUrl, '/') + '/sse_feed';
             }
 
-            const tempImg = new Image();
-            // DO NOT set crossOrigin (standard HTML img bypasses CORS rules)
-            tempImg.onload = () => {
-                targetImg.src = tempImg.src;
-                targetImg.style.display = 'block';
-                offlineOverlay.style.display = 'none';
-                if (liveBadge) liveBadge.style.display = 'flex';
+            sseStream = new EventSource(sseUrl);
 
-                if (customUrl) {
-                    statusTxt.innerText = 'Remote Colab GPU Live Feed Active (Direct HTTP/2 20+ FPS)';
-                    statusTxt.style.color = '#10b981';
-                } else {
-                    statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
-                    statusTxt.style.color = '#10b981';
+            sseStream.onmessage = function(e) {
+                if (e.data) {
+                    targetImg.src = e.data;
+                    targetImg.style.display = 'block';
+                    offlineOverlay.style.display = 'none';
+                    if (liveBadge) liveBadge.style.display = 'flex';
+
+                    if (customUrl) {
+                        statusTxt.innerText = 'Remote Colab GPU Live Feed Active (SSE Real-Time 25+ FPS)';
+                        statusTxt.style.color = '#10b981';
+                    } else {
+                        statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
+                        statusTxt.style.color = '#10b981';
+                    }
                 }
-
-                isFetchingFrame = false;
-                requestAnimationFrame(fetchNextStreamFrame);
             };
 
-            tempImg.onerror = () => {
-                isFetchingFrame = false;
-                setTimeout(fetchNextStreamFrame, 40);
+            sseStream.onerror = function() {
+                sseStream.close();
+                // Fallback to local SSE proxy if remote connection fails
+                if (customUrl && sseUrl !== '/sse-proxy') {
+                    sseUrl = '/sse-proxy';
+                    sseStream = new EventSource(sseUrl);
+                    sseStream.onmessage = function(e) {
+                        if (e.data) {
+                            targetImg.src = e.data;
+                            targetImg.style.display = 'block';
+                            offlineOverlay.style.display = 'none';
+                            if (liveBadge) liveBadge.style.display = 'flex';
+                            statusTxt.innerText = 'Remote Colab GPU Live Feed Active (Proxy SSE 25+ FPS)';
+                            statusTxt.style.color = '#10b981';
+                        }
+                    };
+                } else {
+                    setTimeout(initSSEStream, 1500);
+                }
             };
-
-            tempImg.src = frameUrl;
         }
 
-        fetchNextStreamFrame();
+        initSSEStream();
 
         function showOfflineScreen() {
             const img = document.getElementById('mjpegFeed');
