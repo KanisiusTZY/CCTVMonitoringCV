@@ -637,13 +637,20 @@
         setInterval(refreshLogs, 5000);
 
         function checkStreamStatus() {
-            fetch('http://localhost:5000/status')
+            const host = window.location.hostname || 'localhost';
+            const statusUrl = `http://${host}:5000/status`;
+            const streamUrl = `http://${host}:5000/video_feed`;
+
+            fetch(statusUrl)
             .then(res => res.json())
             .then(data => {
                 const img = document.getElementById('mjpegFeed');
                 const video = document.getElementById('rawVideoPlayer');
                 const statusTxt = document.getElementById('streamStatusText');
                 if (data.streaming) {
+                    if (!img.src || !img.src.includes(':5000/video_feed')) {
+                        img.src = streamUrl;
+                    }
                     img.style.display = 'block';
                     video.style.display = 'none';
                     statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';

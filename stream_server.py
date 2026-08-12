@@ -29,9 +29,18 @@ def generate_stream():
         
         time.sleep(0.04)  # ~25 FPS
 
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+    return response
+
 @app.route('/video_feed')
 def video_feed():
-    return Response(generate_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    resp = Response(generate_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 @app.route('/status')
 def status():
