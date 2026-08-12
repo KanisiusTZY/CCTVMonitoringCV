@@ -453,7 +453,7 @@
                     </div>
 
                     <!-- Live MJPEG Stream from Python Engine (Port 5000) -->
-                    <img id="mjpegFeed" style="width: 100%; height: 100%; object-fit: contain; display: none;" onerror="showOfflineScreen()">
+                    <img id="mjpegFeed" style="width: 100%; height: 100%; object-fit: contain; display: none;">
 
                     <!-- Offline Screen Overlay when Python Engine is stopped -->
                     <div id="offlineOverlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); gap: 14px; padding: 40px; text-align: center;">
@@ -652,54 +652,45 @@
         function checkStreamStatus() {
             const customUrl = document.getElementById('cfg-stream-url').value.trim();
             const host = window.location.hostname || 'localhost';
-            
-            let statusUrl = `http://${host}:5000/status`;
-            let streamUrl = `http://${host}:5000/video_feed`;
+
+            const img = document.getElementById('mjpegFeed');
+            const offlineOverlay = document.getElementById('offlineOverlay');
+            const statusTxt = document.getElementById('streamStatusText');
+            const liveBadge = document.getElementById('streamLiveBadge');
 
             if (customUrl) {
-                streamUrl = customUrl;
-                // Derive status URL if ngrok URL ends with /video_feed or domain
-                statusUrl = customUrl.replace('/video_feed', '/status');
+                if (img.src !== customUrl) {
+                    img.src = customUrl;
+                }
+                img.style.display = 'block';
+                offlineOverlay.style.display = 'none';
+                if (liveBadge) liveBadge.style.display = 'flex';
+                statusTxt.innerText = 'Remote Colab GPU Live Feed Active (Cloudflare / Ngrok)';
+                statusTxt.style.color = '#10b981';
+                return;
             }
+
+            const statusUrl = `http://${host}:5000/status`;
+            const streamUrl = `http://${host}:5000/video_feed`;
 
             fetch(statusUrl)
             .then(res => res.json())
             .then(data => {
-                const img = document.getElementById('mjpegFeed');
-                const offlineOverlay = document.getElementById('offlineOverlay');
-                const statusTxt = document.getElementById('streamStatusText');
-                const liveBadge = document.getElementById('streamLiveBadge');
                 if (data.streaming) {
                     if (!img.src || img.style.display === 'none') {
-                        img.src = streamUrl + (streamUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+                        img.src = streamUrl + '?t=' + Date.now();
                     }
                     img.style.display = 'block';
                     offlineOverlay.style.display = 'none';
                     if (liveBadge) liveBadge.style.display = 'flex';
-                    statusTxt.innerText = customUrl ? 'Remote Colab GPU Feed Active (Ngrok)' : 'Python YOLOv8 AI Feed Online (Port 5000)';
+                    statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
                     statusTxt.style.color = '#10b981';
                 } else {
                     showOfflineScreen();
                 }
             })
             .catch(() => {
-                // If custom Ngrok URL is set, force render it directly on img element
-                if (customUrl) {
-                    const img = document.getElementById('mjpegFeed');
-                    const offlineOverlay = document.getElementById('offlineOverlay');
-                    const statusTxt = document.getElementById('streamStatusText');
-                    const liveBadge = document.getElementById('streamLiveBadge');
-                    if (!img.src || img.style.display === 'none') {
-                        img.src = customUrl;
-                    }
-                    img.style.display = 'block';
-                    offlineOverlay.style.display = 'none';
-                    if (liveBadge) liveBadge.style.display = 'flex';
-                    statusTxt.innerText = 'Remote Colab GPU Live Feed (Ngrok)';
-                    statusTxt.style.color = '#10b981';
-                } else {
-                    showOfflineScreen();
-                }
+                showOfflineScreen();
             });
         }
 

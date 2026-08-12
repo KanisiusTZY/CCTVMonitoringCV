@@ -1,66 +1,67 @@
 {
-  "source": "s.mp4",
-  "model_name": "yolov8m.pt",
-  "confidence": 0.1,
-  "upper_body_ratio": 0.5,
-  "iou_threshold": 0.2,
-  "enter_seconds": 2,
-  "exit_seconds": 0.5,
-  "miss_tolerance_seconds": 0.5,
-  "chair_zones": [
-    {
-      "id": "chair_1",
-      "bbox": [
-        751,
-        483,
-        875,
-        652
-      ]
-    },
-    {
-      "id": "chair_2",
-      "bbox": [
-        1162,
-        562,
-        1305,
-        745
-      ]
-    },
-    {
-      "id": "chair_3",
-      "bbox": [
-        1301,
-        390,
-        1375,
-        507
-      ]
-    },
-    {
-      "id": "chair_4",
-      "bbox": [
-        1472,
-        358,
-        1571,
-        516
-      ]
-    },
-    {
-      "id": "chair_5",
-      "bbox": [
-        1301,
-        280,
-        1401,
-        372
-      ]
-    },
-    {
-      "id": "chair_6",
-      "bbox": [
-        1004,
-        330,
-        1090,
-        456
-      ]
-    }
-  ]
+    "source": "s.mp4",
+    "model_name": "yolov8m.pt",
+    "confidence": 0.1,
+    "upper_body_ratio": 0.5,
+    "iou_threshold": 0.2,
+    "enter_seconds": 2,
+    "exit_seconds": 0.5,
+    "miss_tolerance_seconds": 0.5,
+    "chair_zones": [
+        {
+            "id": "chair_1",
+            "bbox": [
+                751,
+                483,
+                875,
+                652
+            ]
+        },
+        {
+            "id": "chair_2",
+            "bbox": [
+                1162,
+                562,
+                1305,
+                745
+            ]
+        },
+        {
+            "id": "chair_3",
+            "bbox": [
+                1301,
+                390,
+                1375,
+                507
+            ]
+        },
+        {
+            "id": "chair_4",
+            "bbox": [
+                1472,
+                358,
+                1571,
+                516
+            ]
+        },
+        {
+            "id": "chair_5",
+            "bbox": [
+                1301,
+                280,
+                1401,
+                372
+            ]
+        },
+        {
+            "id": "chair_6",
+            "bbox": [
+                1004,
+                330,
+                1090,
+                456
+            ]
+        }
+    ],
+    "stream_url": "https:\/\/ordering-vbulletin-verified-short.trycloudflare.com\/video_feed"
 }

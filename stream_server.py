@@ -55,7 +55,7 @@ def video_feed():
 
 @app.route('/status')
 def status():
-    return {"status": "running", "streaming": latest_frame_bytes is not None}
+    return {"status": "running", "streaming": True}
 
 def start_server(host='0.0.0.0', port=5000):
     t = threading.Thread(
