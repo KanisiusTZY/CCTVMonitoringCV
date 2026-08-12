@@ -5,8 +5,9 @@ from flask import Flask, Response
 
 app = Flask(__name__)
 
+frame_condition = threading.Condition()
 latest_frame_bytes = None
-lock = threading.Lock()
+frame_id = 0
 
 import numpy as np
 
@@ -18,36 +19,42 @@ def get_placeholder_frame():
     return jpeg.tobytes() if ret else b''
 
 def set_latest_frame(frame):
-    global latest_frame_bytes
+    global latest_frame_bytes, frame_id
     if frame is None:
         return
-    # Fast resize stream payload for zero-lag remote tunneling
+
     h, w = frame.shape[:2]
-    if w > 720:
-        new_w = 720
-        new_h = int(h * (720 / w))
-        stream_frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+    if w > 854:
+        new_w = 854
+        new_h = int(h * (854 / w))
+        stream_frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
     else:
         stream_frame = frame
 
-    ret, jpeg = cv2.imencode('.jpg', stream_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 65])
+    ret, jpeg = cv2.imencode('.jpg', stream_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
     if ret:
-        with lock:
+        with frame_condition:
             latest_frame_bytes = jpeg.tobytes()
+            frame_id += 1
+            frame_condition.notify_all()
 
 def generate_stream():
-    global latest_frame_bytes
+    global latest_frame_bytes, frame_id
+    last_sent_id = -1
     while True:
-        with lock:
+        with frame_condition:
+            while frame_id == last_sent_id and latest_frame_bytes is not None:
+                frame_condition.wait(timeout=0.5)
+            
             frame = latest_frame_bytes
-        
+            last_sent_id = frame_id
+
         if frame is None:
             frame = get_placeholder_frame()
-        
+            time.sleep(0.1)
+
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-        
-        time.sleep(0.015)  # Fast push
 
 @app.after_request
 def add_cors_headers(response):
