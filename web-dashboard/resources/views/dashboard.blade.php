@@ -455,18 +455,15 @@
                     <!-- Live MJPEG Stream from Python Engine (Port 5000) -->
                     <img id="mjpegFeed" style="width: 100%; height: 100%; object-fit: contain; display: none;" onerror="showOfflineScreen()">
 
-                    <!-- Offline Screen Overlay when Python Engine is stopped (Ctrl+C) -->
-                    <div id="offlineOverlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); gap: 16px; padding: 40px; text-align: center;">
-                        <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; border: 1px solid rgba(244, 63, 94, 0.3);">
-                            <i class="fa-solid fa-power-off"></i>
+                    <!-- Offline Screen Overlay when Python Engine is stopped -->
+                    <div id="offlineOverlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); gap: 14px; padding: 40px; text-align: center;">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(244, 63, 94, 0.12); color: var(--accent-rose); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; border: 1px solid rgba(244, 63, 94, 0.25);">
+                            <i class="fa-solid fa-video-slash"></i>
                         </div>
-                        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; font-weight: 700; color: #f8fafc;">Python AI Engine Offline</h3>
-                        <p style="color: var(--text-muted); max-width: 460px; font-size: 0.9rem; line-height: 1.5;">
-                            Proses Python (<code style="color: var(--accent-blue);">main.py</code>) telah dihentikan. Jalankan perintah di bawah ini pada terminal untuk memulai kembali stream AI:
+                        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 700; color: #f8fafc;">Stream Tidak Tersedia</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">
+                            Silakan aktifkan service monitoring AI untuk melihat stream live.
                         </p>
-                        <code style="background: rgba(0,0,0,0.5); color: var(--accent-blue); padding: 10px 18px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; border: 1px solid var(--border-color);">
-                            python main.py
-                        </code>
                     </div>
                 </div>
 
@@ -684,7 +681,7 @@
             img.style.display = 'none';
             offlineOverlay.style.display = 'flex';
             if (liveBadge) liveBadge.style.display = 'none';
-            statusTxt.innerText = 'Python Engine Offline (System Stopped)';
+            statusTxt.innerText = 'Stream Tidak Tersedia';
             statusTxt.style.color = '#f43f5e';
         }
 
