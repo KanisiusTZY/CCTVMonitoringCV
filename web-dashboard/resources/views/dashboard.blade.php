@@ -651,6 +651,15 @@
         setInterval(refreshLogs, 5000);
 
         let isFetchingFrame = false;
+        let useProxyFallback = false;
+
+        function rtrim(str, ch) {
+            let res = str;
+            while (res.length > 0 && res.endsWith(ch)) {
+                res = res.substring(0, res.length - 1);
+            }
+            return res;
+        }
 
         function fetchNextStreamFrame() {
             if (isFetchingFrame) return;
@@ -662,7 +671,16 @@
             const statusTxt = document.getElementById('streamStatusText');
             const liveBadge = document.getElementById('streamLiveBadge');
 
+            let frameUrl = '/current-frame-proxy?t=' + Date.now();
+
+            if (customUrl && !useProxyFallback) {
+                const baseUrl = customUrl.replace(/\/video_feed|\/status|\/current_frame\.jpg$/g, '');
+                frameUrl = rtrim(baseUrl, '/') + '/current_frame.jpg?t=' + Date.now();
+            }
+
             const tempImg = new Image();
+            tempImg.crossOrigin = 'anonymous';
+
             tempImg.onload = () => {
                 targetImg.src = tempImg.src;
                 targetImg.style.display = 'block';
@@ -670,7 +688,7 @@
                 if (liveBadge) liveBadge.style.display = 'flex';
 
                 if (customUrl) {
-                    statusTxt.innerText = 'Remote Colab GPU Live Feed Active (Low-Latency Stream)';
+                    statusTxt.innerText = useProxyFallback ? 'Remote Colab GPU Live Feed Active (Laravel Stream Proxy)' : 'Remote Colab GPU Live Feed Active (Direct HTTP/2 20+ FPS)';
                     statusTxt.style.color = '#10b981';
                 } else {
                     statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
@@ -683,10 +701,15 @@
 
             tempImg.onerror = () => {
                 isFetchingFrame = false;
-                setTimeout(fetchNextStreamFrame, 500);
+                if (customUrl && !useProxyFallback) {
+                    useProxyFallback = true;
+                    setTimeout(fetchNextStreamFrame, 50);
+                } else {
+                    setTimeout(fetchNextStreamFrame, 400);
+                }
             };
 
-            tempImg.src = '/current-frame-proxy?t=' + Date.now();
+            tempImg.src = frameUrl;
         }
 
         fetchNextStreamFrame();
