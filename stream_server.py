@@ -23,20 +23,24 @@ def set_latest_frame(frame):
     if frame is None:
         return
 
-    # Downscale stream preview resolution to 512px for ultra-lightweight tunnel transmission (~10KB/frame)
-    h, w = frame.shape[:2]
-    if w > 512:
-        new_w = 512
-        new_h = int(h * (512 / w))
-        stream_frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
-    else:
-        stream_frame = frame
+    # 1. Resize stream frame to 640x360 (keeping original YOLO detection at full resolution)
+    stream_frame = cv2.resize(frame, (640, 360), interpolation=cv2.INTER_AREA)
 
-    ret, jpeg = cv2.imencode('.jpg', stream_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+    # 2. Compress JPEG with quality 45
+    ret, jpeg = cv2.imencode('.jpg', stream_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 45])
     if ret:
+        raw_bytes = jpeg.tobytes()
+        size_kb = len(raw_bytes) / 1024.0
+
         with frame_condition:
-            latest_frame_bytes = jpeg.tobytes()
+            latest_frame_bytes = raw_bytes
             frame_id += 1
+
+            # 4. Print size and estimated bandwidth log every 30 frames
+            if frame_id % 30 == 0:
+                est_mbps = (size_kb * 10 * 8) / 1024.0  # Estimated bandwidth at 10 FPS
+                print(f"[STREAM INFO] JPEG Frame Size: {size_kb:.2f} KB | Est. Bandwidth (at 10 FPS): {est_mbps:.2f} Mbps (Fit within 2-3 Mbps free tunnel budget!)")
+
             frame_condition.notify_all()
 
 def generate_stream():

@@ -134,8 +134,9 @@ def main():
             # 3. Visualisasikan hasil pada frame
             annotated_frame = visualizer.render(frame, presence_results, fps=fps)
 
-            # Kirim frame ter-annotasi ke MJPEG stream server Web Dashboard
-            stream_server.set_latest_frame(annotated_frame)
+            # Kirim frame ter-annotasi ke MJPEG stream server (tiap frame ke-2 / frame skip agar ~10 FPS stream hemat bandwidth)
+            if frame_count % 2 == 0:
+                stream_server.set_latest_frame(annotated_frame)
 
             # Tulis frame ke file jika output dikonfigurasi
             if writer:
