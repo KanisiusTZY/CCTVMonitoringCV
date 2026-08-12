@@ -445,12 +445,19 @@
                     <div class="video-feed-overlay">
                         <div class="badge-live">
                             <span class="pulse-dot" style="background: #fff; box-shadow: none;"></span>
-                            LIVE CV STREAM
+                            LIVE AI CV STREAM
                         </div>
+                        <span id="streamStatusText" style="background: rgba(15,23,42,0.85); color: var(--accent-blue); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; border: 1px solid var(--border-color);">
+                            Connecting Python AI Engine...
+                        </span>
                     </div>
-                    <video id="videoPlayer" controls autoplay loop muted style="width: 100%; height: 100%; object-fit: contain;">
-                        <source src="/{{ $config['source'] ?? 'm.mp4' }}" type="video/mp4">
-                        Your browser does not support HTML5 video playback.
+
+                    <!-- Live MJPEG Stream from Python Engine (Port 5000) -->
+                    <img id="mjpegFeed" src="http://localhost:5000/video_feed" style="width: 100%; height: 100%; object-fit: contain; display: block;">
+
+                    <!-- Fallback Video Player when Python script is offline -->
+                    <video id="rawVideoPlayer" controls autoplay loop muted style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                        <source src="/{{ $config['source'] ?? 's.mp4' }}" type="video/mp4">
                     </video>
                 </div>
 
@@ -628,6 +635,33 @@
 
         // Auto Refresh Logs every 5 seconds
         setInterval(refreshLogs, 5000);
+
+        function checkStreamStatus() {
+            fetch('http://localhost:5000/status')
+            .then(res => res.json())
+            .then(data => {
+                const img = document.getElementById('mjpegFeed');
+                const video = document.getElementById('rawVideoPlayer');
+                const statusTxt = document.getElementById('streamStatusText');
+                if (data.streaming) {
+                    img.style.display = 'block';
+                    video.style.display = 'none';
+                    statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
+                    statusTxt.style.color = '#10b981';
+                }
+            })
+            .catch(() => {
+                const img = document.getElementById('mjpegFeed');
+                const video = document.getElementById('rawVideoPlayer');
+                const statusTxt = document.getElementById('streamStatusText');
+                img.style.display = 'none';
+                video.style.display = 'block';
+                statusTxt.innerText = 'Python Engine Offline - Video Player Fallback';
+                statusTxt.style.color = '#f59e0b';
+            });
+        }
+        setInterval(checkStreamStatus, 3000);
+        checkStreamStatus();
 
         function showToast(msg, isError = false) {
             const toast = document.getElementById('toast');

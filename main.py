@@ -8,6 +8,7 @@ import time
 from detectors.person_detector import PersonDetector
 from rules.rule_zone_presence import RuleZonePresence
 from visualizer import Visualizer
+import stream_server
 
 CONFIG_PATH = "config.json"
 
@@ -57,6 +58,9 @@ def main():
     )
     rule_engine = RuleZonePresence(config)
     visualizer = Visualizer()
+
+    # Jalankan MJPEG Stream Server untuk Web Dashboard
+    stream_server.start_server(port=5000)
 
     # Buka video capture
     cap_source = int(source) if str(source).isdigit() else source
@@ -121,6 +125,9 @@ def main():
 
             # 3. Visualisasikan hasil pada frame
             annotated_frame = visualizer.render(frame, presence_results, fps=fps)
+
+            # Kirim frame ter-annotasi ke MJPEG stream server Web Dashboard
+            stream_server.set_latest_frame(annotated_frame)
 
             # Tulis frame ke file jika output dikonfigurasi
             if writer:
