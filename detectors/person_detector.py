@@ -4,11 +4,11 @@ import numpy as np
 class PersonDetector:
     def __init__(self, model_name: str = "yolov8m.pt", confidence: float = 0.1, upper_body_ratio: float = 0.5):
         """
-        YOLOv8 Person Detector with Smart Upper-Body Cropping and ByteTrack stabilization.
+        Pendeteksi Personel YOLOv8 dengan Pemotongan Tubuh Bagian Atas (Upper-Body) & Pelacak ByteTrack.
         
-        :param model_name: YOLO model file (default: 'yolov8m.pt')
-        :param confidence: Detection confidence threshold (default: 0.1)
-        :param upper_body_ratio: Ratio of full height to crop as upper body (default: 0.5)
+        :param model_name: File bobot model YOLO (default: 'yolov8m.pt')
+        :param confidence: Ambang batas keyakinan deteksi (default: 0.1)
+        :param upper_body_ratio: Rasio tinggi tubuh yang dipotong sebagai tubuh bagian atas (default: 0.5)
         """
         self.model = YOLO(model_name)
         self.confidence = float(confidence)
@@ -16,23 +16,23 @@ class PersonDetector:
 
     def detect(self, frame):
         """
-        Detects and tracks persons in the frame using ByteTrack, then crops each
-        detection to upper-body bbox.
+        Mendeteksi dan melacak personel dalam frame menggunakan ByteTrack, kemudian
+        memotong setiap deteksi ke koordinat bounding box tubuh bagian atas.
         
-        :param frame: BGR image (numpy array)
-        :return: List of dicts containing upper_body_bbox, full_body_bbox, confidence, and track_id
+        :param frame: Citra BGR (numpy array)
+        :return: List berisi dictionary (upper_body_bbox, full_body_bbox, confidence, track_id)
         """
         if frame is None:
             return []
 
-        # Run inference with ByteTrack tracker for stable IDs and smoother bboxes
+        # Jalankan inferensi dengan pelacak ByteTrack untuk ID stabil & bounding box lebih halus
         results = self.model.track(
             frame,
             verbose=False,
             conf=self.confidence,
-            classes=[0],          # person only
+            classes=[0],          # Khusus kelas 0 ('person')
             tracker="bytetrack.yaml",
-            persist=True,         # maintain track state across frames
+            persist=True,         # Pertahankan status pelacakan antar frame
         )[0]
 
         detections = []
@@ -44,7 +44,7 @@ class PersonDetector:
             xyxy = box.xyxy[0].cpu().numpy()
             x1, y1, x2, y2 = float(xyxy[0]), float(xyxy[1]), float(xyxy[2]), float(xyxy[3])
 
-            # Get track ID if available (None on first frame or lost track)
+            # Ambil ID pelacakan jika tersedia
             track_id = int(box.id[0].cpu().numpy()) if box.id is not None else None
 
             full_body_bbox = [int(x1), int(y1), int(x2), int(y2)]

@@ -3,20 +3,20 @@ import numpy as np
 
 class Visualizer:
     def __init__(self):
-        self.color_bekerja  = (0, 220, 80)      # BGR Green
-        self.color_away     = (0, 60, 220)       # BGR Red
-        self.color_waiting  = (0, 180, 255)      # BGR Orange (occ naik tapi belum BEKERJA)
+        self.color_bekerja  = (0, 220, 80)      # Hijau BGR
+        self.color_away     = (0, 60, 220)       # Merah BGR
+        self.color_waiting  = (0, 180, 255)      # Oranye BGR (Akumulasi waktu masuk)
         self.font           = cv2.FONT_HERSHEY_SIMPLEX
 
     def format_duration(self, seconds: float) -> str:
-        """Formats duration in seconds into 'XmYYs' format."""
+        """Format durasi dalam detik ke format 'XmYYs'."""
         total_sec = int(max(0, seconds))
         mins  = total_sec // 60
         secs  = total_sec % 60
         return f"{mins}m{secs:02d}s"
 
     def _draw_label(self, img, text, pos, font_scale=0.48, color=(255,255,255), bg_color=(30,30,30), thickness=1):
-        """Draw text with a dark background pill for readability."""
+        """Menggambar teks dengan latar belakang gelap agar mudah dibaca."""
         (tw, th), baseline = cv2.getTextSize(text, self.font, font_scale, thickness)
         x, y = pos
         pad = 4
@@ -25,12 +25,12 @@ class Visualizer:
 
     def render(self, frame, presence_results: dict, fps: float = 0.0):
         """
-        Renders presence monitoring visualization with labels on each box.
+        Merender visualisasi monitoring kehadiran dengan kotak berwarna di setiap zona.
         
-        :param frame: Input BGR image frame
-        :param presence_results: Dict output from RuleZonePresence
-        :param fps: Current FPS
-        :return: Annotated BGR frame
+        :param frame: Citra BGR input
+        :param presence_results: Dict output dari RuleZonePresence
+        :param fps: Nilai FPS saat ini
+        :return: Frame BGR terannotasi
         """
         if frame is None:
             return frame
@@ -69,11 +69,11 @@ class Visualizer:
             # Gambar kotak utama (2px)
             cv2.rectangle(output, (x1, y1), (x2, y2), color, 2)
 
-        # --- Top info bar ---
+        # --- Bilah Informasi Atas (Top Info Bar) ---
         bar_h = 44
         cv2.rectangle(output, (0, 0), (w, bar_h), (18, 18, 18), -1)
 
-        cv2.putText(output, "Presence Monitoring",
+        cv2.putText(output, "Monitoring Kehadiran Personel",
                     (14, 28), self.font, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
 
         bekerja_text = f"BEKERJA: {total_bekerja}"
