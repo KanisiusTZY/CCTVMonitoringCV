@@ -20,4 +20,5 @@ Route::get('/logs', [DashboardController::class, 'getLogs']);
 Route::get('/config', [DashboardController::class, 'getConfig']);
 Route::post('/config', [DashboardController::class, 'updateConfig']);
 Route::get('/stream-proxy', [DashboardController::class, 'streamProxy']);
+Route::get('/current-frame-proxy', [DashboardController::class, 'currentFrameProxy']);
 Route::post('/api/incidents', [DashboardController::class, 'storeIncident']);

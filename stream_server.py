@@ -69,6 +69,20 @@ def video_feed():
     resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 
+@app.route('/current_frame.jpg')
+@app.route('/snapshot')
+def current_frame():
+    with frame_condition:
+        frame = latest_frame_bytes
+    if frame is None:
+        frame = get_placeholder_frame()
+    
+    resp = Response(frame, mimetype='image/jpeg')
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
 @app.route('/status')
 def status():
     return {"status": "running", "streaming": True}

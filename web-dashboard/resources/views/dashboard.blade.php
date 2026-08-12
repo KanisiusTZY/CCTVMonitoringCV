@@ -650,28 +650,46 @@
         // Auto Refresh Logs every 5 seconds
         setInterval(refreshLogs, 5000);
 
-        function checkStreamStatus() {
+        let isFetchingFrame = false;
+
+        function fetchNextStreamFrame() {
+            if (isFetchingFrame) return;
+            isFetchingFrame = true;
+
             const customUrl = document.getElementById('cfg-stream-url').value.trim();
-            const img = document.getElementById('mjpegFeed');
+            const targetImg = document.getElementById('mjpegFeed');
             const offlineOverlay = document.getElementById('offlineOverlay');
             const statusTxt = document.getElementById('streamStatusText');
             const liveBadge = document.getElementById('streamLiveBadge');
 
-            if (!img.src || !img.src.includes('/stream-proxy')) {
-                img.src = '/stream-proxy?t=' + Date.now();
-            }
-            img.style.display = 'block';
-            offlineOverlay.style.display = 'none';
-            if (liveBadge) liveBadge.style.display = 'flex';
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                targetImg.src = tempImg.src;
+                targetImg.style.display = 'block';
+                offlineOverlay.style.display = 'none';
+                if (liveBadge) liveBadge.style.display = 'flex';
 
-            if (customUrl) {
-                statusTxt.innerText = 'Remote Colab GPU Feed Active (Laravel Stream Proxy)';
-                statusTxt.style.color = '#10b981';
-            } else {
-                statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
-                statusTxt.style.color = '#10b981';
-            }
+                if (customUrl) {
+                    statusTxt.innerText = 'Remote Colab GPU Live Feed Active (Low-Latency Stream)';
+                    statusTxt.style.color = '#10b981';
+                } else {
+                    statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
+                    statusTxt.style.color = '#10b981';
+                }
+
+                isFetchingFrame = false;
+                requestAnimationFrame(fetchNextStreamFrame);
+            };
+
+            tempImg.onerror = () => {
+                isFetchingFrame = false;
+                setTimeout(fetchNextStreamFrame, 500);
+            };
+
+            tempImg.src = '/current-frame-proxy?t=' + Date.now();
         }
+
+        fetchNextStreamFrame();
 
         function showOfflineScreen() {
             const img = document.getElementById('mjpegFeed');

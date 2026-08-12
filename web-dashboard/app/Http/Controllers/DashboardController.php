@@ -136,4 +136,43 @@ class DashboardController extends Controller
             'Content-Encoding' => 'none',
         ]);
     }
+
+    public function currentFrameProxy(Request $request)
+    {
+        $config = [];
+        if (file_exists($this->getConfigPath())) {
+            $config = json_decode(file_get_contents($this->getConfigPath()), true);
+        }
+
+        $streamUrl = !empty($config['stream_url']) ? trim($config['stream_url']) : 'http://127.0.0.1:5000/video_feed';
+        
+        $baseUrl = preg_replace('/\/video_feed|\/status|\/current_frame\.jpg$/', '', $streamUrl);
+        $frameUrl = rtrim($baseUrl, '/') . '/current_frame.jpg';
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $frameUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "ngrok-skip-browser-warning: 69420",
+            "bypass-tunnel-reminder: true",
+            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ]);
+        $image = curl_exec($ch);
+        curl_close($ch);
+
+        if (!$image) {
+            return response('', 404);
+        }
+
+        return response($image, 200, [
+            'Content-Type' => 'image/jpeg',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+        ]);
+    }
 }
