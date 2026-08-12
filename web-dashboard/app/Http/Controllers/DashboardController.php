@@ -50,6 +50,7 @@ class DashboardController extends Controller
             'enter_seconds' => 'required|numeric',
             'exit_seconds' => 'required|numeric',
             'miss_tolerance_seconds' => 'required|numeric',
+            'stream_url' => 'nullable|string',
         ]);
 
         $currentConfig = [];

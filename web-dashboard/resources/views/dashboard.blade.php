@@ -527,7 +527,12 @@
                     <form id="configForm">
                         <div class="form-group">
                             <label class="form-label">Video Source File</label>
-                            <input type="text" class="form-input" id="cfg-source" name="source" value="{{ $config['source'] ?? 'm.mp4' }}">
+                            <input type="text" class="form-input" id="cfg-source" name="source" value="{{ $config['source'] ?? 's.mp4' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Custom Stream URL / Ngrok URL (Opsional)</label>
+                            <input type="text" class="form-input" id="cfg-stream-url" name="stream_url" value="{{ $config['stream_url'] ?? '' }}" placeholder="misal: https://xxxx.ngrok-free.app/video_feed">
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -577,6 +582,7 @@
             
             const payload = {
                 source: document.getElementById('cfg-source').value,
+                stream_url: document.getElementById('cfg-stream-url').value,
                 confidence: parseFloat(document.getElementById('cfg-confidence').value),
                 enter_seconds: parseFloat(document.getElementById('cfg-enter').value),
                 exit_seconds: parseFloat(document.getElementById('cfg-exit').value),
@@ -597,6 +603,7 @@
                     showToast('Configuration updated & synced!');
                     document.getElementById('stat-source').innerText = data.config.source;
                     document.getElementById('stat-conf').innerText = (data.config.confidence * 100) + '%';
+                    checkStreamStatus();
                 }
             })
             .catch(err => {
@@ -643,9 +650,17 @@
         setInterval(refreshLogs, 5000);
 
         function checkStreamStatus() {
+            const customUrl = document.getElementById('cfg-stream-url').value.trim();
             const host = window.location.hostname || 'localhost';
-            const statusUrl = `http://${host}:5000/status`;
-            const streamUrl = `http://${host}:5000/video_feed`;
+            
+            let statusUrl = `http://${host}:5000/status`;
+            let streamUrl = `http://${host}:5000/video_feed`;
+
+            if (customUrl) {
+                streamUrl = customUrl;
+                // Derive status URL if ngrok URL ends with /video_feed or domain
+                statusUrl = customUrl.replace('/video_feed', '/status');
+            }
 
             fetch(statusUrl)
             .then(res => res.json())
@@ -656,19 +671,35 @@
                 const liveBadge = document.getElementById('streamLiveBadge');
                 if (data.streaming) {
                     if (!img.src || img.style.display === 'none') {
-                        img.src = streamUrl + '?t=' + Date.now();
+                        img.src = streamUrl + (streamUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
                     }
                     img.style.display = 'block';
                     offlineOverlay.style.display = 'none';
                     if (liveBadge) liveBadge.style.display = 'flex';
-                    statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
+                    statusTxt.innerText = customUrl ? 'Remote Colab GPU Feed Active (Ngrok)' : 'Python YOLOv8 AI Feed Online (Port 5000)';
                     statusTxt.style.color = '#10b981';
                 } else {
                     showOfflineScreen();
                 }
             })
             .catch(() => {
-                showOfflineScreen();
+                // If custom Ngrok URL is set, force render it directly on img element
+                if (customUrl) {
+                    const img = document.getElementById('mjpegFeed');
+                    const offlineOverlay = document.getElementById('offlineOverlay');
+                    const statusTxt = document.getElementById('streamStatusText');
+                    const liveBadge = document.getElementById('streamLiveBadge');
+                    if (!img.src || img.style.display === 'none') {
+                        img.src = customUrl;
+                    }
+                    img.style.display = 'block';
+                    offlineOverlay.style.display = 'none';
+                    if (liveBadge) liveBadge.style.display = 'flex';
+                    statusTxt.innerText = 'Remote Colab GPU Live Feed (Ngrok)';
+                    statusTxt.style.color = '#10b981';
+                } else {
+                    showOfflineScreen();
+                }
             });
         }
 
