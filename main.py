@@ -49,7 +49,8 @@ def main():
 
     # Initialize components
     detector = PersonDetector(
-        confidence=config.get("confidence", 0.25),
+        model_name=config.get("model_name", "yolov8m.pt"),
+        confidence=config.get("confidence", 0.1),
         upper_body_ratio=config.get("upper_body_ratio", 0.5)
     )
     rule_engine = RuleZonePresence(config)

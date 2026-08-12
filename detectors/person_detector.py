@@ -2,12 +2,12 @@ from ultralytics import YOLO
 import numpy as np
 
 class PersonDetector:
-    def __init__(self, model_name: str = "yolov8n.pt", confidence: float = 0.03, upper_body_ratio: float = 0.5):
+    def __init__(self, model_name: str = "yolov8m.pt", confidence: float = 0.1, upper_body_ratio: float = 0.5):
         """
-        YOLOv8 Person Detector with Smart Upper-Body Cropping.
+        YOLOv8 Person Detector with Smart Upper-Body Cropping and ByteTrack stabilization.
         
-        :param model_name: YOLO model file (default: 'yolov8n.pt')
-        :param confidence: Detection confidence threshold (default: 0.03)
+        :param model_name: YOLO model file (default: 'yolov8m.pt')
+        :param confidence: Detection confidence threshold (default: 0.1)
         :param upper_body_ratio: Ratio of full height to crop as upper body (default: 0.5)
         """
         self.model = YOLO(model_name)
@@ -16,16 +16,24 @@ class PersonDetector:
 
     def detect(self, frame):
         """
-        Detects persons in the frame and crops each detection to upper-body bbox.
+        Detects and tracks persons in the frame using ByteTrack, then crops each
+        detection to upper-body bbox.
         
         :param frame: BGR image (numpy array)
-        :return: List of dicts containing upper_body_bbox, full_body_bbox, and confidence
+        :return: List of dicts containing upper_body_bbox, full_body_bbox, confidence, and track_id
         """
         if frame is None:
             return []
 
-        # Run inference filtering specifically for class 0 ('person')
-        results = self.model(frame, verbose=False, conf=self.confidence, classes=[0])[0]
+        # Run inference with ByteTrack tracker for stable IDs and smoother bboxes
+        results = self.model.track(
+            frame,
+            verbose=False,
+            conf=self.confidence,
+            classes=[0],          # person only
+            tracker="bytetrack.yaml",
+            persist=True,         # maintain track state across frames
+        )[0]
 
         detections = []
         if results.boxes is None or len(results.boxes) == 0:
@@ -35,6 +43,9 @@ class PersonDetector:
             conf = float(box.conf[0].cpu().numpy())
             xyxy = box.xyxy[0].cpu().numpy()
             x1, y1, x2, y2 = float(xyxy[0]), float(xyxy[1]), float(xyxy[2]), float(xyxy[3])
+
+            # Get track ID if available (None on first frame or lost track)
+            track_id = int(box.id[0].cpu().numpy()) if box.id is not None else None
 
             full_body_bbox = [int(x1), int(y1), int(x2), int(y2)]
 
@@ -52,7 +63,8 @@ class PersonDetector:
             detections.append({
                 "upper_body_bbox": upper_body_bbox,
                 "full_body_bbox": full_body_bbox,
-                "confidence": conf
+                "confidence": conf,
+                "track_id": track_id,
             })
 
         return detections
