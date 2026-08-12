@@ -23,15 +23,16 @@ def set_latest_frame(frame):
     if frame is None:
         return
 
+    # Downscale stream preview resolution to 512px for ultra-lightweight tunnel transmission (~10KB/frame)
     h, w = frame.shape[:2]
-    if w > 854:
-        new_w = 854
-        new_h = int(h * (854 / w))
+    if w > 512:
+        new_w = 512
+        new_h = int(h * (512 / w))
         stream_frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
     else:
         stream_frame = frame
 
-    ret, jpeg = cv2.imencode('.jpg', stream_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+    ret, jpeg = cv2.imencode('.jpg', stream_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
     if ret:
         with frame_condition:
             latest_frame_bytes = jpeg.tobytes()
