@@ -57,6 +57,51 @@ def video_feed():
 def status():
     return {"status": "running", "streaming": True}
 
+import sys
+import subprocess
+import re
+
+def auto_start_tunnel(port=5000):
+    try:
+        import google.colab
+        is_colab = True
+    except ImportError:
+        is_colab = False
+
+    if is_colab or sys.platform.startswith("linux"):
+        try:
+            subprocess.run(["cloudflared", "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            try:
+                subprocess.run("wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb && dpkg -i cloudflared-linux-amd64.deb", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
+
+        try:
+            proc = subprocess.Popen(
+                ["cloudflared", "tunnel", "--url", f"http://localhost:{port}"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            public_url = None
+            for _ in range(25):
+                line = proc.stderr.readline()
+                if "trycloudflare.com" in line:
+                    match = re.search(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', line)
+                    if match:
+                        public_url = match.group(0)
+                        break
+                time.sleep(0.3)
+            
+            if public_url:
+                print("\n" + "="*70)
+                print(" CLOUDFLARE PUBLIC LIVE STREAM URL (100% AKTIF):")
+                print(f"    {public_url}/video_feed")
+                print("="*70 + "\n")
+        except Exception:
+            pass
+
 def start_server(host='0.0.0.0', port=5000):
     t = threading.Thread(
         target=lambda: app.run(host=host, port=port, debug=False, use_reloader=False, threaded=True),
@@ -64,3 +109,4 @@ def start_server(host='0.0.0.0', port=5000):
     )
     t.start()
     print(f"[INFO] MJPEG Live Stream Server berjalan di http://localhost:{port}/video_feed")
+    auto_start_tunnel(port=port)
