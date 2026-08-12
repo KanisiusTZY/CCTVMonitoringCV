@@ -144,18 +144,13 @@ def main():
             if frame_count % 50 == 0 or frame_count == total_frames:
                 print(f"[INFO] Memproses frame {frame_count}/{total_frames}...")
 
-            # Tampilkan jendela GUI jika mode --gui diaktifkan
-            if args.gui:
-                cv2.imshow(window_name, annotated_frame)
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord('q') or key == 27:
-                    print("[INFO] Tombol keluar ditekan.")
-                    break
-                elif key == ord('r'):
-                    rule_engine.reset()
-                    print("[INFO] Semua timer dan counter kehadiran telah di-reset.")
-            else:
-                time.sleep(0.01)
+            # Sinkronisasi pemutaran frame sesuai FPS video asli agar aliran video mulus & stabil
+            elapsed = time.time() - curr_time
+            target_sleep = (1.0 / fps_in) - elapsed
+            if target_sleep > 0:
+                time.sleep(target_sleep)
+            elif not args.gui:
+                time.sleep(0.005)
 
     except KeyboardInterrupt:
         print("[INFO] Dihentikan oleh pengguna.")

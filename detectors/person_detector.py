@@ -25,7 +25,10 @@ class PersonDetector:
         if frame is None:
             return []
 
-        # Jalankan inferensi dengan pelacak ByteTrack untuk ID stabil & bounding box lebih halus
+        import torch
+        device = 0 if torch.cuda.is_available() else 'cpu'
+
+        # Jalankan inferensi dengan pelacak ByteTrack ber-GPU untuk performa maksimal
         results = self.model.track(
             frame,
             verbose=False,
@@ -33,6 +36,7 @@ class PersonDetector:
             classes=[0],          # Khusus kelas 0 ('person')
             tracker="bytetrack.yaml",
             persist=True,         # Pertahankan status pelacakan antar frame
+            device=device
         )[0]
 
         detections = []
