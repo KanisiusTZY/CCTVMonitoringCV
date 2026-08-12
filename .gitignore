@@ -13,3 +13,4 @@ __pycache__/
 
 # Temporary scratch
 scratch/
+composer.phar

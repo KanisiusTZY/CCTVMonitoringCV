@@ -2,6 +2,11 @@ import time
 import cv2
 import numpy as np
 
+try:
+    import python_bridge
+except ImportError:
+    python_bridge = None
+
 def compute_box_metrics(boxA, boxB):
     """
     Menghitung Intersection over Union (IoU), rasio Containment boxA di dalam boxB,
@@ -180,17 +185,22 @@ class RuleZonePresence:
             )
 
             # Transisi status berbasis waktu
+            old_status = self.status[zone_id]
             if occupied_duration >= self.enter_seconds:
                 self.status[zone_id]          = "BEKERJA"
                 self.away_start_time[zone_id] = None
                 if temp_matched_bbox is not None:
                     self.matched_bbox[zone_id] = temp_matched_bbox
+                if old_status != "BEKERJA" and python_bridge:
+                    python_bridge.send_incident(zone_id, "ENTER", person_count=1, duration_seconds=round(occupied_duration, 2))
 
             elif empty_duration >= self.exit_seconds:
                 self.status[zone_id] = "TIDAK_DI_TEMPAT"
                 if self.away_start_time[zone_id] is None:
                     self.away_start_time[zone_id] = current_time
                 self.matched_bbox[zone_id] = None
+                if old_status != "TIDAK_DI_TEMPAT" and python_bridge:
+                    python_bridge.send_incident(zone_id, "EXIT", person_count=0, duration_seconds=round(empty_duration, 2))
 
             else:
                 # Dalam transisi — pertahankan bbox terakhir jika masih bekerja
