@@ -89,4 +89,51 @@ class DashboardController extends Controller
 
         return response()->json(['status' => 'success', 'log' => $log]);
     }
+
+    public function streamProxy(Request $request)
+    {
+        $config = [];
+        if (file_exists($this->getConfigPath())) {
+            $config = json_decode(file_get_contents($this->getConfigPath()), true);
+        }
+
+        $streamUrl = !empty($config['stream_url']) ? $config['stream_url'] : 'http://127.0.0.1:5000/video_feed';
+
+        if (!str_contains($streamUrl, '/video_feed')) {
+            $streamUrl = rtrim($streamUrl, '/') . '/video_feed';
+        }
+
+        $opts = [
+            "http" => [
+                "method" => "GET",
+                "header" => "ngrok-skip-browser-warning: 69420\r\n" .
+                            "bypass-tunnel-reminder: true\r\n" .
+                            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n",
+                "timeout" => 10
+            ],
+            "ssl" => [
+                "verify_peer" => false,
+                "verify_peer_name" => false,
+            ]
+        ];
+        $context = stream_context_create($opts);
+
+        return response()->stream(function() use ($streamUrl, $context) {
+            $fp = @fopen($streamUrl, 'rb', false, $context);
+            if ($fp) {
+                while (!feof($fp)) {
+                    echo fread($fp, 8192);
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
+                    flush();
+                }
+                fclose($fp);
+            }
+        }, 200, [
+            'Content-Type' => 'multipart/x-mixed-replace; boundary=frame',
+            'Cache-Control' => 'no-cache, private',
+            'Pragma' => 'no-cache',
+        ]);
+    }
 }

@@ -452,8 +452,8 @@
                         </span>
                     </div>
 
-                    <!-- Live MJPEG Stream from Python Engine (Port 5000) -->
-                    <img id="mjpegFeed" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                    <!-- Live MJPEG Stream from Python Engine (Local or Remote Colab via Proxy) -->
+                    <img id="mjpegFeed" src="/stream-proxy" style="width: 100%; height: 100%; object-fit: contain; display: block;">
 
                     <!-- Offline Screen Overlay when Python Engine is stopped -->
                     <div id="offlineOverlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); gap: 14px; padding: 40px; text-align: center;">
@@ -651,47 +651,25 @@
 
         function checkStreamStatus() {
             const customUrl = document.getElementById('cfg-stream-url').value.trim();
-            const host = window.location.hostname || 'localhost';
-
             const img = document.getElementById('mjpegFeed');
             const offlineOverlay = document.getElementById('offlineOverlay');
             const statusTxt = document.getElementById('streamStatusText');
             const liveBadge = document.getElementById('streamLiveBadge');
 
-            if (customUrl) {
-                if (img.src !== customUrl) {
-                    img.src = customUrl;
-                }
-                img.style.display = 'block';
-                offlineOverlay.style.display = 'none';
-                if (liveBadge) liveBadge.style.display = 'flex';
-                statusTxt.innerText = 'Remote Colab GPU Live Feed Active (Cloudflare / Ngrok)';
-                statusTxt.style.color = '#10b981';
-                return;
+            if (!img.src || !img.src.includes('/stream-proxy')) {
+                img.src = '/stream-proxy?t=' + Date.now();
             }
+            img.style.display = 'block';
+            offlineOverlay.style.display = 'none';
+            if (liveBadge) liveBadge.style.display = 'flex';
 
-            const statusUrl = `http://${host}:5000/status`;
-            const streamUrl = `http://${host}:5000/video_feed`;
-
-            fetch(statusUrl)
-            .then(res => res.json())
-            .then(data => {
-                if (data.streaming) {
-                    if (!img.src || img.style.display === 'none') {
-                        img.src = streamUrl + '?t=' + Date.now();
-                    }
-                    img.style.display = 'block';
-                    offlineOverlay.style.display = 'none';
-                    if (liveBadge) liveBadge.style.display = 'flex';
-                    statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
-                    statusTxt.style.color = '#10b981';
-                } else {
-                    showOfflineScreen();
-                }
-            })
-            .catch(() => {
-                showOfflineScreen();
-            });
+            if (customUrl) {
+                statusTxt.innerText = 'Remote Colab GPU Feed Active (Laravel Stream Proxy)';
+                statusTxt.style.color = '#10b981';
+            } else {
+                statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
+                statusTxt.style.color = '#10b981';
+            }
         }
 
         function showOfflineScreen() {
