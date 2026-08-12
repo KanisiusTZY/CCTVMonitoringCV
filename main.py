@@ -159,6 +159,7 @@ def main():
         if args.gui:
             cv2.destroyAllWindows()
         print("[INFO] Aplikasi selesai.")
+        os._exit(0)
 
 if __name__ == "__main__":
     main()
