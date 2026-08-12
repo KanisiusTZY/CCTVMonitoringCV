@@ -651,7 +651,6 @@
         setInterval(refreshLogs, 5000);
 
         let isFetchingFrame = false;
-        let useProxyFallback = false;
 
         function rtrim(str, ch) {
             let res = str;
@@ -673,14 +672,13 @@
 
             let frameUrl = '/current-frame-proxy?t=' + Date.now();
 
-            if (customUrl && !useProxyFallback) {
+            if (customUrl) {
                 const baseUrl = customUrl.replace(/\/video_feed|\/status|\/current_frame\.jpg$/g, '');
                 frameUrl = rtrim(baseUrl, '/') + '/current_frame.jpg?t=' + Date.now();
             }
 
             const tempImg = new Image();
-            tempImg.crossOrigin = 'anonymous';
-
+            // DO NOT set crossOrigin (standard HTML img bypasses CORS rules)
             tempImg.onload = () => {
                 targetImg.src = tempImg.src;
                 targetImg.style.display = 'block';
@@ -688,7 +686,7 @@
                 if (liveBadge) liveBadge.style.display = 'flex';
 
                 if (customUrl) {
-                    statusTxt.innerText = useProxyFallback ? 'Remote Colab GPU Live Feed Active (Laravel Stream Proxy)' : 'Remote Colab GPU Live Feed Active (Direct HTTP/2 20+ FPS)';
+                    statusTxt.innerText = 'Remote Colab GPU Live Feed Active (Direct HTTP/2 20+ FPS)';
                     statusTxt.style.color = '#10b981';
                 } else {
                     statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
@@ -701,12 +699,7 @@
 
             tempImg.onerror = () => {
                 isFetchingFrame = false;
-                if (customUrl && !useProxyFallback) {
-                    useProxyFallback = true;
-                    setTimeout(fetchNextStreamFrame, 50);
-                } else {
-                    setTimeout(fetchNextStreamFrame, 400);
-                }
+                setTimeout(fetchNextStreamFrame, 40);
             };
 
             tempImg.src = frameUrl;
