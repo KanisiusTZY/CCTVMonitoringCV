@@ -97,39 +97,35 @@ class DashboardController extends Controller
             $config = json_decode(file_get_contents($this->getConfigPath()), true);
         }
 
-        $streamUrl = !empty($config['stream_url']) ? $config['stream_url'] : 'http://127.0.0.1:5000/video_feed';
+        $streamUrl = !empty($config['stream_url']) ? trim($config['stream_url']) : 'http://127.0.0.1:5000/video_feed';
 
         if (!str_contains($streamUrl, '/video_feed')) {
             $streamUrl = rtrim($streamUrl, '/') . '/video_feed';
         }
 
-        $opts = [
-            "http" => [
-                "method" => "GET",
-                "header" => "ngrok-skip-browser-warning: 69420\r\n" .
-                            "bypass-tunnel-reminder: true\r\n" .
-                            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n",
-                "timeout" => 10
-            ],
-            "ssl" => [
-                "verify_peer" => false,
-                "verify_peer_name" => false,
-            ]
-        ];
-        $context = stream_context_create($opts);
-
-        return response()->stream(function() use ($streamUrl, $context) {
-            $fp = @fopen($streamUrl, 'rb', false, $context);
-            if ($fp) {
-                while (!feof($fp)) {
-                    echo fread($fp, 8192);
-                    if (ob_get_level() > 0) {
-                        ob_flush();
-                    }
-                    flush();
+        return response()->stream(function() use ($streamUrl) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $streamUrl);
+            curl_setopt($ch, CURLOPT_HEADER, false);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($curl, $data) {
+                echo $data;
+                if (ob_get_level() > 0) {
+                    ob_flush();
                 }
-                fclose($fp);
-            }
+                flush();
+                return strlen($data);
+            });
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "ngrok-skip-browser-warning: 69420",
+                "bypass-tunnel-reminder: true",
+                "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ]);
+            curl_exec($ch);
+            curl_close($ch);
         }, 200, [
             'Content-Type' => 'multipart/x-mixed-replace; boundary=frame',
             'Cache-Control' => 'no-cache, private',

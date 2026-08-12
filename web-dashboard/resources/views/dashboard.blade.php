@@ -533,6 +533,7 @@
                         <div class="form-group">
                             <label class="form-label">Custom Stream URL / Ngrok URL (Opsional)</label>
                             <input type="text" class="form-input" id="cfg-stream-url" name="stream_url" value="{{ $config['stream_url'] ?? '' }}" placeholder="misal: https://xxxx.ngrok-free.app/video_feed">
+                            <small style="margin-top: 4px; display: block;"><a id="directStreamLink" href="{{ $config['stream_url'] ?? '#' }}" target="_blank" style="color: var(--accent-blue); text-decoration: underline;">[Klik di sini 1x jika Cloudflare/Ngrok minta konfirmasi akses]</a></small>
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
