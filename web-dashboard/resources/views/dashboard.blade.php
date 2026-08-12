@@ -443,7 +443,7 @@
 
                 <div class="video-container">
                     <div class="video-feed-overlay">
-                        <div class="badge-live">
+                        <div class="badge-live" id="streamLiveBadge">
                             <span class="pulse-dot" style="background: #fff; box-shadow: none;"></span>
                             LIVE AI CV STREAM
                         </div>
@@ -453,12 +453,21 @@
                     </div>
 
                     <!-- Live MJPEG Stream from Python Engine (Port 5000) -->
-                    <img id="mjpegFeed" style="width: 100%; height: 100%; object-fit: contain; display: none;" onerror="showFallbackVideo()">
+                    <img id="mjpegFeed" style="width: 100%; height: 100%; object-fit: contain; display: none;" onerror="showOfflineScreen()">
 
-                    <!-- Fallback Video Player when Python script is offline -->
-                    <video id="rawVideoPlayer" controls autoplay loop muted style="width: 100%; height: 100%; object-fit: contain; display: block;">
-                        <source src="/{{ $config['source'] ?? 's.mp4' }}" type="video/mp4">
-                    </video>
+                    <!-- Offline Screen Overlay when Python Engine is stopped (Ctrl+C) -->
+                    <div id="offlineOverlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); gap: 16px; padding: 40px; text-align: center;">
+                        <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; border: 1px solid rgba(244, 63, 94, 0.3);">
+                            <i class="fa-solid fa-power-off"></i>
+                        </div>
+                        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; font-weight: 700; color: #f8fafc;">Python AI Engine Offline</h3>
+                        <p style="color: var(--text-muted); max-width: 460px; font-size: 0.9rem; line-height: 1.5;">
+                            Proses Python (<code style="color: var(--accent-blue);">main.py</code>) telah dihentikan. Jalankan perintah di bawah ini pada terminal untuk memulai kembali stream AI:
+                        </p>
+                        <code style="background: rgba(0,0,0,0.5); color: var(--accent-blue); padding: 10px 18px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; border: 1px solid var(--border-color);">
+                            python main.py
+                        </code>
+                    </div>
                 </div>
 
                 <!-- Active Zone Details List -->
@@ -645,37 +654,41 @@
             .then(res => res.json())
             .then(data => {
                 const img = document.getElementById('mjpegFeed');
-                const video = document.getElementById('rawVideoPlayer');
+                const offlineOverlay = document.getElementById('offlineOverlay');
                 const statusTxt = document.getElementById('streamStatusText');
+                const liveBadge = document.getElementById('streamLiveBadge');
                 if (data.streaming) {
                     if (!img.src || img.style.display === 'none') {
                         img.src = streamUrl + '?t=' + Date.now();
                     }
                     img.style.display = 'block';
-                    video.style.display = 'none';
+                    offlineOverlay.style.display = 'none';
+                    if (liveBadge) liveBadge.style.display = 'flex';
                     statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
                     statusTxt.style.color = '#10b981';
                 } else {
-                    showFallbackVideo();
+                    showOfflineScreen();
                 }
             })
             .catch(() => {
-                showFallbackVideo();
+                showOfflineScreen();
             });
         }
 
-        function showFallbackVideo() {
+        function showOfflineScreen() {
             const img = document.getElementById('mjpegFeed');
-            const video = document.getElementById('rawVideoPlayer');
+            const offlineOverlay = document.getElementById('offlineOverlay');
             const statusTxt = document.getElementById('streamStatusText');
+            const liveBadge = document.getElementById('streamLiveBadge');
             img.removeAttribute('src');
             img.style.display = 'none';
-            video.style.display = 'block';
-            statusTxt.innerText = 'Python Engine Offline - Video Player Fallback';
-            statusTxt.style.color = '#f59e0b';
+            offlineOverlay.style.display = 'flex';
+            if (liveBadge) liveBadge.style.display = 'none';
+            statusTxt.innerText = 'Python Engine Offline (System Stopped)';
+            statusTxt.style.color = '#f43f5e';
         }
 
-        setInterval(checkStreamStatus, 3000);
+        setInterval(checkStreamStatus, 2000);
         checkStreamStatus();
 
         function showToast(msg, isError = false) {
