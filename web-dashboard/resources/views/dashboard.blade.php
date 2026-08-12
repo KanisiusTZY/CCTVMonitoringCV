@@ -453,10 +453,10 @@
                     </div>
 
                     <!-- Live MJPEG Stream from Python Engine (Port 5000) -->
-                    <img id="mjpegFeed" src="http://localhost:5000/video_feed" style="width: 100%; height: 100%; object-fit: contain; display: block;">
+                    <img id="mjpegFeed" style="width: 100%; height: 100%; object-fit: contain; display: none;" onerror="showFallbackVideo()">
 
                     <!-- Fallback Video Player when Python script is offline -->
-                    <video id="rawVideoPlayer" controls autoplay loop muted style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                    <video id="rawVideoPlayer" controls autoplay loop muted style="width: 100%; height: 100%; object-fit: contain; display: block;">
                         <source src="/{{ $config['source'] ?? 's.mp4' }}" type="video/mp4">
                     </video>
                 </div>
@@ -648,25 +648,33 @@
                 const video = document.getElementById('rawVideoPlayer');
                 const statusTxt = document.getElementById('streamStatusText');
                 if (data.streaming) {
-                    if (!img.src || !img.src.includes(':5000/video_feed')) {
-                        img.src = streamUrl;
+                    if (!img.src || img.style.display === 'none') {
+                        img.src = streamUrl + '?t=' + Date.now();
                     }
                     img.style.display = 'block';
                     video.style.display = 'none';
                     statusTxt.innerText = 'Python YOLOv8 AI Feed Online (Port 5000)';
                     statusTxt.style.color = '#10b981';
+                } else {
+                    showFallbackVideo();
                 }
             })
             .catch(() => {
-                const img = document.getElementById('mjpegFeed');
-                const video = document.getElementById('rawVideoPlayer');
-                const statusTxt = document.getElementById('streamStatusText');
-                img.style.display = 'none';
-                video.style.display = 'block';
-                statusTxt.innerText = 'Python Engine Offline - Video Player Fallback';
-                statusTxt.style.color = '#f59e0b';
+                showFallbackVideo();
             });
         }
+
+        function showFallbackVideo() {
+            const img = document.getElementById('mjpegFeed');
+            const video = document.getElementById('rawVideoPlayer');
+            const statusTxt = document.getElementById('streamStatusText');
+            img.removeAttribute('src');
+            img.style.display = 'none';
+            video.style.display = 'block';
+            statusTxt.innerText = 'Python Engine Offline - Video Player Fallback';
+            statusTxt.style.color = '#f59e0b';
+        }
+
         setInterval(checkStreamStatus, 3000);
         checkStreamStatus();
 
